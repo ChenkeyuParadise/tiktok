@@ -52,15 +52,19 @@ class Utils(object):
 
     def getXbogus(self, url, headers=None):
         urls = Urls()
-        try:
-            response = json.loads(requests.post(
-                url= urls.GET_XB_PATH, data={"param" : url}, headers=headers).text)
-            params = response["param"]
-            xb = response["X-Bogus"]
-        except Exception as e:
-            print('[  错误  ]:X-Bogus接口异常, 可能是访问流量高, 接口限流请稍等几分钟再次尝试')
+        times = 0
+        while times < 3:
+            try:
+                response = json.loads(requests.post(
+                    url= urls.GET_XB_PATH, data={"param" : url}, headers=headers).text)
+                params = response["param"]
+                xb = response["X-Bogus"]
+                break
+            except Exception as e:
+                print('[  错误  ]:X-Bogus接口异常, 可能是访问流量高, 接口限流请稍等几分钟再次尝试')
+                times += 1
+        if times == 3:
             return
-
         return params #, xb
 
 
