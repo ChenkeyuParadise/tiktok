@@ -27,10 +27,11 @@ from TikTokResult import Result
 
 class TikTok(object):
 
-    def __init__(self):
+    def __init__(self, download_deep):
         self.urls = Urls()
         self.utils = Utils()
         self.result = Result()
+        self.download_deep =  download_deep
         self.headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
         'referer': 'https://www.douyin.com/',
@@ -63,9 +64,17 @@ class TikTok(object):
         # 合集
         # https://www.douyin.com/collection/7093490319085307918
         urlstr = str(r.request.path_url)
-
+        print("urlstr:", urlstr)
         if "/share/user/" in urlstr:
             # 获取用户 sec_uid
+            if '?' in r.request.path_url:
+                for one in re.finditer(r'user\/([\d\D]*)([?])', str(r.request.path_url)):
+                    key = one.group(1)
+            else:
+                for one in re.finditer(r'user\/([\d\D]*)', str(r.request.path_url)):
+                    key = one.group(1)
+            key_type = "user"
+        elif "/user/" in urlstr:
             if '?' in r.request.path_url:
                 for one in re.finditer(r'user\/([\d\D]*)([?])', str(r.request.path_url)):
                     key = one.group(1)
@@ -84,7 +93,10 @@ class TikTok(object):
         elif "live.douyin.com" in r.url:
             key = r.url.replace('https://live.douyin.com/', '')
             key_type = "live"
-
+        elif "/video/" in urlstr:
+            key = re.findall('video/(\d+)?', urlstr)[0]
+            key_type = "aweme"
+        print("key:", key)
         if key is None or key_type is None:
             print('[  错误  ]:输入链接有误！无法获取 id\r')
             return key_type, key
@@ -100,8 +112,11 @@ class TikTok(object):
 
         # 单作品接口返回 'aweme_detail'
         # 主页作品接口返回 'aweme_list'->['aweme_detail']
-        jx_url = self.urls.POST_DETAIL + self.utils.getXbogus(
-            url=f'aweme_id={aweme_id}&aid=1128&version_name=23.5.0&device_platform=android&os_version=2333')
+        info = self.utils.getXbogus(url=f'aweme_id={aweme_id}&aid=1128&version_name=23.5.0&device_platform=android&os_version=2333')
+        if info:
+            jx_url = self.urls.POST_DETAIL + info
+            #self.utils.getXbogus(
+            #url=f'aweme_id={aweme_id}&aid=1128&version_name=23.5.0&device_platform=android&os_version=2333')
 
         while True:
             # 接口不稳定, 有时服务器不返回数据, 需要重新获取
@@ -143,8 +158,10 @@ class TikTok(object):
         print("[  提示  ]:正在获取所有作品数据请稍后...\r")
         print("[  提示  ]:会进行多次请求，等待时间较长...\r\n")
         times = 0
-        while True:
+        while times < self.download_deep:
             times = times + 1
+            if times > 2:
+                break
             print("[  提示  ]:正在对 [主页] 进行第 " + str(times) + " 次请求...\r")
             if mode == "post":
                 url = self.urls.USER_POST + self.utils.getXbogus(

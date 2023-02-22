@@ -36,6 +36,8 @@ def argument():
                         type=bool, required=False, default=True)
     parser.add_argument("--mode", "-M", help="link是个人主页时, 设置下载发布的作品(post)或喜欢的作品(like)或者用户所有合集(mix), 默认为post",
                         type=str, required=False, default="post")
+    parser.add_argument("--deep", "-d", help="下载深度限制",
+                        type=int, required=False, default=2)
     args = parser.parse_args()
 
     return args
@@ -44,7 +46,7 @@ def argument():
 def main():
     utils = Utils()
     args = argument()
-    tk = TikTok()
+    tk = TikTok(args.deep)
     url = tk.getShareLink(args.link)
     key_type, key = tk.getKey(url)
     if key is None or key_type is None:
