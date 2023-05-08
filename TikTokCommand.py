@@ -49,6 +49,8 @@ def main():
     tk = TikTok(args.deep)
     url = tk.getShareLink(args.link)
     key_type, key = tk.getKey(url)
+    print("key_type:", key_type)
+    print("key:", key)
     if key is None or key_type is None:
         return
     elif key_type == "user" and args.mode != 'mix':
