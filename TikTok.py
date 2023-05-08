@@ -32,11 +32,12 @@ class TikTok(object):
         self.utils = Utils()
         self.result = Result()
         self.download_deep =  download_deep
-        self.headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
-        'referer': 'https://www.douyin.com/',
-        'Cookie': 'ttwid=1|sGp2L-Krm46cXHcK7BsKghavVeVQIIOYtQInA1LV0-w|1676899557|3e483426230c481bd34f4d6529d6252372c154b75be7d4a2baec8edbfd0a742c; __ac_signature=_02B4Z6wo00f01CEKaogAAIDBqkHxaCCYIyghKm4AAGu9c3; s_v_web_id=verify_ledo1j1t_0NwhDQFJ_nLca_42o5_8tAA_T8CWm5E2M6LF; msToken=%s;odin_tt=324fb4ea4a89c0c05827e18a1ed9cf9bf8a17f7705fcc793fec935b637867e2a5a9b8168c885554d029919117a18ba69;' % self.utils.generate_random_str(107)
-        }
+        # self.headers = {
+        # 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
+        # 'referer': 'https://www.douyin.com/',
+        # 'Cookie': 'ttwid=1|sGp2L-Krm46cXHcK7BsKghavVeVQIIOYtQInA1LV0-w|1676899557|3e483426230c481bd34f4d6529d6252372c154b75be7d4a2baec8edbfd0a742c; __ac_signature=_02B4Z6wo00f01CEKaogAAIDBqkHxaCCYIyghKm4AAGu9c3; s_v_web_id=verify_ledo1j1t_0NwhDQFJ_nLca_42o5_8tAA_T8CWm5E2M6LF; msToken=%s;odin_tt=324fb4ea4a89c0c05827e18a1ed9cf9bf8a17f7705fcc793fec935b637867e2a5a9b8168c885554d029919117a18ba69;' % self.utils.generate_random_str(107)
+        # }
+        self.headers = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
 
 
     # 从分享链接中提取网址
@@ -51,7 +52,7 @@ class TikTok(object):
         key_type = None
 
         try:
-            r = requests.get(url=url, headers=self.headers)
+            r = requests.get(url=url, headers=self.headers, timeout=20)
         except Exception as e:
             print('[  错误  ]:输入链接有误！\r')
             return key_type, key
@@ -117,16 +118,22 @@ class TikTok(object):
             jx_url = self.urls.POST_DETAIL + info
             #self.utils.getXbogus(
             #url=f'aweme_id={aweme_id}&aid=1128&version_name=23.5.0&device_platform=android&os_version=2333')
-
+        cnt = 0
         while True:
             # 接口不稳定, 有时服务器不返回数据, 需要重新获取
+            if cnt > 5:
+                break
             try:
                 raw = requests.get(url=jx_url, headers=self.headers).text
                 datadict = json.loads(raw)
                 if datadict is not None and datadict['aweme_detail'] is not None and datadict["status_code"] == 0:
                     break
             except Exception as e:
+                print("[Exception]:", e)
                 print("[  警告  ]:接口未返回数据, 正在重新请求!\r")
+                print("[ sleep 1s ]")
+                cnt += 1
+                time.sleep(1)
 
         # 清空self.awemeDict
         self.result.clearDict(self.result.awemeDict)
@@ -379,6 +386,7 @@ class TikTok(object):
 
     # 来自 https://blog.csdn.net/weixin_43347550/article/details/105248223
     def progressBarDownload(self, url, filepath):
+        print("url:", url)
         start = time.time()  # 下载开始时间
         response = requests.get(url, stream=True, headers=self.headers)
         size = 0  # 初始化已下载大小
